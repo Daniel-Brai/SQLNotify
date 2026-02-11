@@ -11,47 +11,63 @@ from tests.database import DatabaseManager
 
 patch.dict(
     os.environ,
-    {
-        "POSTGRES_HOST": "postgres"
-    },
+    {"POSTGRES_HOST": "postgres"},
 ).start()  # noqa
 
 
-def pytest_addoption(parser):
-    parser.addoption(
-        "--db",
-        action="store",
-        default="postgresql",
-        help="Database type to use for tests: postgresql or sqlite",
-    )
+def pytest_collection_modifyitems(config, items):
+    required = set()
+
+    for item in items:
+        fname = os.path.basename(str(item.fspath)).lower()
+        if fname.startswith("test_sqlite"):
+            required.add("sqlite")
+        if fname.startswith("test_postgres") or fname.startswith("test_postgresql"):
+            required.add("postgresql")
+
+    if not required:
+        required.add(os.getenv("TEST_DB", "postgresql"))
+
+    config._required_db_types = required
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def db_type(request) -> str:
-    return request.config.getoption("--db")
+    fname = os.path.basename(str(request.node.fspath)).lower()
+    if fname.startswith("test_sqlite"):
+        return "sqlite"
+    if fname.startswith("test_postgres") or fname.startswith("test_postgresql"):
+        return "postgresql"
+    return os.getenv("TEST_DB", "postgresql")
 
 
 @pytest.fixture(scope="session")
-def database_manager(db_type: str) -> DatabaseManager:
-    return DatabaseManager(db_type=db_type)
+def database_manager() -> DatabaseManager:
+    return DatabaseManager()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def manage_test_database(database_manager: DatabaseManager):
-    database_manager.create_test_database()
+def manage_test_database(request, database_manager: DatabaseManager):
+    required = getattr(request.config, "_required_db_types", None)
+    if not required:
+        required = {os.getenv("TEST_DB", "postgresql")}
+    for db in required:
+        database_manager.create_test_database(db_type=db)
 
     yield
 
-    database_manager.drop_test_database()
+    for db in required:
+        database_manager.drop_test_database(db_type=db)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def async_engine(
     database_manager: DatabaseManager,
+    db_type: str,
 ) -> AsyncGenerator[AsyncEngine, None]:
-    engine = database_manager.create_async_engine()
+    engine = database_manager.create_async_engine(db_type=db_type)
 
-    await database_manager.create_tables_async(engine)
+    await database_manager.create_tables_async(engine, db_type=db_type)
 
     yield engine
 
@@ -83,11 +99,13 @@ async def async_session_factory(async_engine: AsyncEngine):
     )
 
 
-@pytest.fixture(scope="session")
-def sync_engine(database_manager: DatabaseManager) -> Generator[Engine, None, None]:
-    engine = database_manager.create_sync_engine()
+@pytest.fixture(scope="function")
+def sync_engine(
+    database_manager: DatabaseManager, db_type: str
+) -> Generator[Engine, None, None]:
+    engine = database_manager.create_sync_engine(db_type=db_type)
 
-    database_manager.create_tables_sync(engine)
+    database_manager.create_tables_sync(engine, db_type=db_type)
 
     yield engine
 

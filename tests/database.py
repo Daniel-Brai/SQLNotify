@@ -15,15 +15,18 @@ from sqlmodel import SQLModel
 
 class DatabaseManager:
 
-    def __init__(self, db_type: str = "postgresql"):
+    def __init__(self, db_type: str | None = None):
         self.db_type = db_type
         self._engine: Engine | AsyncEngine | None = None
         self._async_session_factory = None
         self._sync_session_factory = None
 
-    def get_database_url(self, async_driver: bool = False) -> str:
+    def get_database_url(
+        self, async_driver: bool = False, db_type: str | None = None
+    ) -> str:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
 
-        if self.db_type == "sqlite":
+        if db_type == "sqlite":
             if async_driver:
                 return (
                     f"sqlite+aiosqlite:///{os.getenv('SQLITE_DB', 'test_sqlnotify.db')}"
@@ -44,8 +47,9 @@ class DatabaseManager:
 
             return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
 
-    def get_base_connection_url(self) -> str:
-        if self.db_type == "sqlite":
+    def get_base_connection_url(self, db_type: str | None = None) -> str:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
+        if db_type == "sqlite":
             return ""  # SQLite doesn't need base connection
 
         user = os.getenv("POSTGRES_USER", "postgres")
@@ -55,15 +59,16 @@ class DatabaseManager:
 
         return f"postgresql+psycopg://{user}:{password}@{host}:{port}/postgres"
 
-    def create_test_database(self) -> None:
+    def create_test_database(self, db_type: str | None = None) -> None:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
 
-        if self.db_type == "sqlite":
+        if db_type == "sqlite":
             return
 
         worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
         db_name = f"{os.getenv('POSTGRES_DB', 'sqlnotify_test')}_{worker_id}"
 
-        base_url = self.get_base_connection_url()
+        base_url = self.get_base_connection_url(db_type=db_type)
         admin_engine = create_engine(base_url, isolation_level="AUTOCOMMIT")
 
         with admin_engine.connect() as conn:
@@ -72,9 +77,10 @@ class DatabaseManager:
 
         admin_engine.dispose()
 
-    def drop_test_database(self) -> None:
+    def drop_test_database(self, db_type: str | None = None) -> None:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
 
-        if self.db_type == "sqlite":
+        if db_type == "sqlite":
             db_file = os.getenv("SQLITE_DB", "test_sqlnotify.db")
 
             if os.path.exists(db_file):
@@ -85,7 +91,7 @@ class DatabaseManager:
         worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
         db_name = f"{os.getenv('POSTGRES_DB', 'sqlnotify_test')}_{worker_id}"
 
-        base_url = self.get_base_connection_url()
+        base_url = self.get_base_connection_url(db_type=db_type)
         admin_engine = create_engine(base_url, isolation_level="AUTOCOMMIT")
 
         with admin_engine.connect() as conn:
@@ -93,20 +99,21 @@ class DatabaseManager:
 
         admin_engine.dispose()
 
-    def create_async_engine(self) -> AsyncEngine:
-
-        url = self.get_database_url(async_driver=True)
+    def create_async_engine(self, db_type: str | None = None) -> AsyncEngine:
+        url = self.get_database_url(async_driver=True, db_type=db_type)
         return create_async_engine(url, echo=False)
 
-    def create_sync_engine(self) -> Engine:
-
-        url = self.get_database_url(async_driver=False)
+    def create_sync_engine(self, db_type: str | None = None) -> Engine:
+        url = self.get_database_url(async_driver=False, db_type=db_type)
         return create_engine(url, echo=False)
 
-    async def create_tables_async(self, engine: AsyncEngine) -> None:
+    async def create_tables_async(
+        self, engine: AsyncEngine, db_type: str | None = None
+    ) -> None:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
 
         async with engine.begin() as conn:
-            if self.db_type == "sqlite":
+            if db_type == "sqlite":
 
                 def create_filtered_tables(connection):
                     tables_to_create = [
@@ -121,8 +128,9 @@ class DatabaseManager:
                 await conn.execute(text("CREATE SCHEMA IF NOT EXISTS analytics"))
                 await conn.run_sync(SQLModel.metadata.create_all)
 
-    def create_tables_sync(self, engine: Engine) -> None:
-        if self.db_type == "sqlite":
+    def create_tables_sync(self, engine: Engine, db_type: str | None = None) -> None:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
+        if db_type == "sqlite":
             tables_to_create = [
                 table
                 for table in SQLModel.metadata.sorted_tables
@@ -135,10 +143,13 @@ class DatabaseManager:
 
             SQLModel.metadata.create_all(engine)
 
-    async def drop_tables_async(self, engine: AsyncEngine) -> None:
+    async def drop_tables_async(
+        self, engine: AsyncEngine, db_type: str | None = None
+    ) -> None:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
 
         async with engine.begin() as conn:
-            if self.db_type == "sqlite":
+            if db_type == "sqlite":
 
                 def drop_filtered_tables(connection):
                     tables_to_drop = [
@@ -152,8 +163,9 @@ class DatabaseManager:
             else:
                 await conn.run_sync(SQLModel.metadata.drop_all)
 
-    def drop_tables_sync(self, engine: Engine) -> None:
-        if self.db_type == "sqlite":
+    def drop_tables_sync(self, engine: Engine, db_type: str | None = None) -> None:
+        db_type = db_type or self.db_type or os.getenv("TEST_DB", "postgresql")
+        if db_type == "sqlite":
             tables_to_drop = [
                 table
                 for table in SQLModel.metadata.sorted_tables

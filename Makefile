@@ -1,6 +1,7 @@
 UV := uv
+CODECOV_CLI := codecovcli
 
-.PHONY: test test_unit test_sqlite test_postgres test_coverage test_all build publish release
+.PHONY: test build publish release coverage
 
 
 build:
@@ -11,8 +12,15 @@ build:
 
 publish:
 	@echo "Publishing to PyPI..."
-	@$(UV) publish -t $(token)
+	@$(UV) publish -t $(PYPI_TOKEN)
 	@echo "Published successfully"
+
+
+coverage:
+	@echo "Running coverage..."
+	@$(UV) run pytest --cov=sqlnotify --cov-report=xml
+	@$(CODECOV_CLI) upload-process -t $(CODECOV_TOKEN) -f coverage.xml
+	@echo "Coverage report generated at coverage.xml"
 
 
 release: build
@@ -20,32 +28,7 @@ release: build
 	@bash scripts/release.sh $(ARGS)
 
 
-test_all: test test_coverage
-	@echo "All tests and coverage completed"
-
-test_coverage:
-	@echo "Running tests coverage for sqlnotify..."
-	@docker compose run --remove-orphans sqlnotify bash -c "$(UV) run pytest --cov=sqlnotify --cov-report=xml"
-	@echo "Test coverage report generated at coverage.xml"
-
-
-test: test_unit test_postgres test_sqlite
+test:
+	@echo "Running all tests for sqlnotify..."
+	@docker compose run --remove-orphans sqlnotify bash -c "$(UV) run pytest"
 	@echo "All tests completed"
-
-
-test_unit:
-	@echo "Running all unit tests for sqlnotify..."
-	@docker compose run --remove-orphans sqlnotify bash -c "$(UV) run pytest tests/test_watcher.py"
-	@echo "All Unit tests completed"
-
-
-test_sqlite:
-	@echo "Running tests for sqlnotify sqlite..."
-	@docker compose run --remove-orphans sqlnotify bash -c "$(UV) run pytest tests/test_sqlite_*.py --db=sqlite"
-	@echo "All SQLite tests completed"
-
-
-test_postgres:
-	@echo "Running tests for sqlnotify postgres..."
-	@docker compose run --remove-orphans sqlnotify bash -c "$(UV) run pytest tests/test_postgres_*.py --db=postgresql"
-	@echo "All PostgreSQL tests completed"

@@ -7,7 +7,7 @@ from sqlnotify.dialects import SQLiteDialect
 from sqlnotify.dialects.utils import detect_dialect_name
 from sqlnotify.types import Operation
 from sqlnotify.watcher import Watcher
-from tests.models import User, UserPostLink 
+from tests.models import User, UserPostLink
 
 
 class TestSQLiteDialect:
@@ -24,7 +24,7 @@ class TestSQLiteDialect:
     def skip_if_not_sqlite(self, db_type):
 
         if db_type != "sqlite":
-            pytest.skip("SQLite functionality tests require --db=sqlite")
+            pytest.skip("SQLite functionality tests require a sqlite test run")
 
     @pytest.fixture
     def watcher(self):
@@ -81,7 +81,9 @@ class TestSQLiteDialect:
         exists = await sqlite_dialect_async.table_exists_async("public", "users")
         assert exists is True
 
-        exists = await sqlite_dialect_async.table_exists_async("public", "nonexistent_table")
+        exists = await sqlite_dialect_async.table_exists_async(
+            "public", "nonexistent_table"
+        )
         assert exists is False
 
     def test_table_exists_sync(self, sqlite_dialect_sync):
@@ -99,7 +101,6 @@ class TestSQLiteDialect:
             "public", sqlite_dialect_async._notification_queue_table
         )
         assert queue_table_exists is True
-
 
     async def test_notification_queue_is_created_sync(self, sqlite_dialect_sync):
         sqlite_dialect_sync._ensure_notification_queue_sync()
@@ -160,7 +161,7 @@ class TestSQLiteDialect:
                 ),
                 {"channel": watcher.channel_name},
             )
-            (count, ) = result.one()
+            (count,) = result.one()
             assert count == 1
 
     def test_notify_sync(self, sqlite_dialect_sync, watcher):
@@ -188,8 +189,9 @@ class TestSQLiteDialect:
         assert "data" in fetched_payload
         assert fetched_payload["data"] == "x" * 10000
 
-    
-    def test_store_and_fetch_overflow_sync(self, sqlite_dialect_sync, watcher_with_overflow):
+    def test_store_and_fetch_overflow_sync(
+        self, sqlite_dialect_sync, watcher_with_overflow
+    ):
 
         large_payload = {"data": "x" * 10000}
         payload_str = json.dumps(large_payload)
@@ -271,7 +273,9 @@ class TestSQLiteDialect:
             trigger_name = result.one_or_none()
             assert trigger_name is None
 
-    def test_build_watcher_sql(self, sqlite_dialect_sync, watcher, composite_key_watcher):
+    def test_build_watcher_sql(
+        self, sqlite_dialect_sync, watcher, composite_key_watcher
+    ):
 
         function_sql, trigger_sql = sqlite_dialect_sync.build_watcher_sql(watcher)
 

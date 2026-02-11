@@ -33,7 +33,7 @@ class TestPostgreSQLDialect:
     def skip_if_not_postgres(self, db_type):
 
         if db_type != "postgresql":
-            pytest.skip("PostgreSQL functionality tests require --db=postgresql")
+            pytest.skip("PostgreSQL functionality tests require a postgresql test run")
 
     @pytest.fixture
     def watcher(self):
