@@ -56,10 +56,10 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Publish to PyPI
-        run: make publish
-        env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      - name: Publish to PyPI (inside Docker)
+        run: |
+          docker run --rm -e PYPI_TOKEN="${{ secrets.PYPI_TOKEN }}" sqlnotify \
+            bash -lc "uv build && uv publish -t $PYPI_TOKEN"
 
       - name: Compose down
         run: docker compose down --remove-orphans
