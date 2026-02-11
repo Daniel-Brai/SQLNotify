@@ -1,0 +1,115 @@
+[project]
+name = "sqlnotify"
+version = "0.1.0"
+description = "A near real-time SQL notification library for database changes, supporting PostgreSQL and SQLite."
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "MIT"
+authors = [{ name = "Daniel Brai", email = "danielbrai.dev@gmail.com" }]
+keywords = ["sql", "database", "notification", "asyncio", "postgresql", "sqlite", "sqlalchemy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+
+    "Intended Audience :: Developers",
+
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
+
+    "Framework :: AsyncIO",
+
+    "Topic :: Database",
+    "Topic :: Database :: Utilities",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+
+    "Typing :: Typed",
+]
+
+requires-python = ">=3.10"
+dependencies = ["sqlalchemy>=2.0.0", "asyncpg>=0.31.0"]
+
+
+[dependency-groups]
+test = [
+    "pre-commit>=4.5.1",
+    "coverage>=7.13.3",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "pytest-xdist>=3.8.0",
+    "pytest-asyncio>=1.3.0",
+    "psycopg[binary]>=3.3.2",
+    "sqlmodel>=0.0.25",
+    "httpx>=0.28.0",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/Daniel-Brai/SQLNotify"
+Repository = "https://github.com/Daniel-Brai/SQLNotify"
+Source = "https://github.com/Daniel-Brai/SQLNotify"
+Issues = "https://github.com/Daniel-Brai/SQLNotify/issues"
+
+[project.optional-dependencies]
+all = ["aiosqlite>=0.22.1"]
+sqlite = ["aiosqlite>=0.22.1"]
+
+
+[project.scripts]
+sqlnotify = "sqlnotify:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.uv]
+package = true
+
+
+[tool.bandit]
+severity_level = "HIGH"
+confidence_level = "HIGH"
+exclude_dirs = ["tests", "venv", ".venv", "build"]
+skips = [
+    "B101",
+    "B608",
+] # Note we skip B101 (assert statements) because we use them in tests and in code too to validate variables, and B608 (hardcoded sql expresssion) because we actually validate the sql expressions in the code as such it is a false positive
+
+[tool.mypy]
+python_version = "3.10"
+show_error_codes = true
+warn_unused_configs = true
+check_untyped_defs = true
+implicit_optional = true
+exclude = ["^./build/.*$", "^./.venv/.*$", "^.*/tests/.*$", "^./examples/.*$"]
+
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG001", # unused arguments in functions
+    "ARG002", # unused variables on methods in classes
+]
+ignore = [
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "W191", # indentation contains tabs
+    "C416", # Allow use of list comprehensions
+]
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["./tests/"]
+python_files = ["test_*.py"]
