@@ -38,10 +38,8 @@ jobs:
 
       - name: Run tests and collect coverage inside Docker
         run: |
-          # Create a directory to store the coverage reports
           mkdir -p coverage_output
 
-          # Start services and run tests inside the sqlnotify service so dependent services (postgres) resolve
           docker compose up -d postgres
           docker compose run --rm \
             -v "${{ github.workspace }}/coverage_output":/app/coverage_output \
@@ -56,10 +54,13 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Publish to PyPI (inside Docker)
+      - name: Publish to PyPI
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
         run: |
           docker run --rm -e PYPI_TOKEN="${{ secrets.PYPI_TOKEN }}" sqlnotify:ci \
-            bash -lc "uv build && uv publish -t $PYPI_TOKEN"
+            bash -lc "uv build && uv publish -t \"$PYPI_TOKEN\""
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Compose down
         run: docker compose down --remove-orphans
