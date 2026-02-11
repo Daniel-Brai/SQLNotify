@@ -349,7 +349,6 @@ class PostgreSQLDialect(BaseDialect):
                 if self._logger:
                     self._logger.error(f"Error processing notification: {str(e)}", exc_info=True)
 
-        # Track pending notification tasks to ensure they complete
         pending_tasks: set[asyncio.Task] = set()
 
         def sync_tracked_notification_handler(
@@ -358,9 +357,11 @@ class PostgreSQLDialect(BaseDialect):
             channel: str,
             payload: str,
         ) -> None:
-            """Synchronous wrapper that creates and tracks async tasks"""
+
             task = asyncio.create_task(notification_handler(conn, pid, channel, payload))
+
             pending_tasks.add(task)
+
             task.add_done_callback(pending_tasks.discard)
 
         try:

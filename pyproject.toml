@@ -2,10 +2,18 @@
 name = "sqlnotify"
 version = "0.1.0"
 description = "A near real-time SQL notification library for database changes, supporting PostgreSQL and SQLite."
-readme = {file = "README.md", content-type = "text/markdown"}
+readme = { file = "README.md", content-type = "text/markdown" }
 license = "MIT"
 authors = [{ name = "Daniel Brai", email = "danielbrai.dev@gmail.com" }]
-keywords = ["sql", "database", "notification", "asyncio", "postgresql", "sqlite", "sqlalchemy"]
+keywords = [
+    "sql",
+    "database",
+    "notification",
+    "asyncio",
+    "postgresql",
+    "sqlite",
+    "sqlalchemy",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
 
@@ -24,7 +32,6 @@ classifiers = [
     "Framework :: AsyncIO",
 
     "Topic :: Database",
-    "Topic :: Database :: Utilities",
     "Topic :: Software Development :: Libraries :: Python Modules",
 
     "Typing :: Typed",
