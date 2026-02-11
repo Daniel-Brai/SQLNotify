@@ -32,15 +32,26 @@ jobs:
         with:
           python-version-file: ".python-version"
 
-      - name: Build the project
+      - name: Build Docker image
         run: |
-          docker compose build sqlnotify
+          docker build -t sqlnotify:ci .
 
-      - name: Run tests
-        run: make test
+      - name: Run tests and collect coverage inside Docker
+        run: |
+          # Create a directory to store the coverage reports
+          mkdir -p coverage_output
+
+          # Run the container and generate both XML and lcov coverage reports
+          docker run --rm \
+            -v "${{ github.workspace }}/coverage_output":/app/coverage_output \
+            sqlnotify:ci \
+            bash -lc "pytest --cov=sqlnotify --cov-report=xml:/app/coverage_output/coverage.xml --cov-report=lcov:/app/coverage_output/lcov.info"
 
       - name: Upload coverage to Codecov
-        run: make coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage_output/coverage.xml
+          fail_ci_if_error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

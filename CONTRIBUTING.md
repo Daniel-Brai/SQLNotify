@@ -49,19 +49,6 @@ make test
 
 # Or directly with pytest
 uv run pytest
-
-# With coverage report
-make test_coverage
-```
-
-### Run specific test files
-
-```bash
-# SQLite tests
-make test_sqlite
-
-# PostgreSQL tests
-make test_postgres
 ```
 
 ## Code Style
