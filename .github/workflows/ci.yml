@@ -41,10 +41,11 @@ jobs:
           # Create a directory to store the coverage reports
           mkdir -p coverage_output
 
-          # Run the container and generate both XML and lcov coverage reports
-          docker run --rm \
+          # Start services and run tests inside the sqlnotify service so dependent services (postgres) resolve
+          docker compose up -d postgres
+          docker compose run --rm \
             -v "${{ github.workspace }}/coverage_output":/app/coverage_output \
-            sqlnotify:ci \
+            sqlnotify \
             bash -lc "uv run pytest --cov=sqlnotify --cov-report=xml:/app/coverage_output/coverage.xml --cov-report=lcov:/app/coverage_output/lcov.info"
 
       - name: Upload coverage to Codecov
