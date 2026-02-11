@@ -58,7 +58,7 @@ jobs:
 
       - name: Publish to PyPI (inside Docker)
         run: |
-          docker run --rm -e PYPI_TOKEN="${{ secrets.PYPI_TOKEN }}" sqlnotify \
+          docker run --rm -e PYPI_TOKEN="${{ secrets.PYPI_TOKEN }}" sqlnotify:ci \
             bash -lc "uv build && uv publish -t $PYPI_TOKEN"
 
       - name: Compose down
