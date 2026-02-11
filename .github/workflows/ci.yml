@@ -45,7 +45,7 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}/coverage_output":/app/coverage_output \
             sqlnotify:ci \
-            bash -lc "pytest --cov=sqlnotify --cov-report=xml:/app/coverage_output/coverage.xml --cov-report=lcov:/app/coverage_output/lcov.info"
+            bash -lc "uv run pytest --cov=sqlnotify --cov-report=xml:/app/coverage_output/coverage.xml --cov-report=lcov:/app/coverage_output/lcov.info"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

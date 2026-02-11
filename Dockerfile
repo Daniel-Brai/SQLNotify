@@ -25,7 +25,6 @@ ENV UV_COMPILE_BYTECODE=1
 RUN uv venv .venv
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
-RUN pip install --no-cache-dir codecov-cli
 ENV PYTHONPATH=/app/
 ENV PYTHONUNBUFFERED=1
 

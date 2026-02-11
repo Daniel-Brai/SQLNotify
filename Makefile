@@ -1,7 +1,7 @@
 UV := uv
 CODECOV_CLI := codecovcli
 
-.PHONY: test build publish release coverage
+.PHONY: test build publish release
 
 
 build:
