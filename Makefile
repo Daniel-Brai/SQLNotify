@@ -17,9 +17,8 @@ publish:
 
 
 coverage:
-	@echo "Running coverage..."
-	@$(UV) run pytest --cov=sqlnotify --cov-report=xml
-	@$(CODECOV_CLI) upload-process -t $(CODECOV_TOKEN) -f coverage.xml
+	@echo "Running coverage (inside Docker)..."
+	@docker compose run --remove-orphans sqlnotify bash -c "$(UV) run pytest --cov=sqlnotify --cov-report=xml && $(CODECOV_CLI) upload-process -t $(CODECOV_TOKEN) -f coverage.xml"
 	@echo "Coverage report generated at coverage.xml"
 
 
