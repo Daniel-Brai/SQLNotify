@@ -10,7 +10,7 @@ from ..dialects import BaseDialect, get_dialect_for_engine
 from ..exceptions import SQLNotifyConfigurationError
 from ..logger import get_logger
 from ..types import ChangeEvent, Operation
-from ..utils import extract_database_url, strip_database_query_params
+from ..utils import extract_database_url, strip_database_query_params, wrap_unhandled_error
 from ..watcher import Watcher
 from .base import BaseNotifier
 
@@ -135,6 +135,7 @@ class Notifier(BaseNotifier):
     def is_running(self) -> bool:
         return self._running
 
+    @wrap_unhandled_error(lambda self: self._logger)
     def start(self) -> None:
         """
         Start watching for database changes synchronously.
@@ -151,6 +152,7 @@ class Notifier(BaseNotifier):
 
         self._start_sync()
 
+    @wrap_unhandled_error(lambda self: self._logger)
     async def astart(self) -> None:
         """
         Start watching for database changes asynchronously.
@@ -203,6 +205,7 @@ class Notifier(BaseNotifier):
         if self._logger:
             self._logger.info(f"SQLNotify Notifier started (sync mode, dialect: {self.dialect_name})")
 
+    @wrap_unhandled_error(lambda self: self._logger)
     def stop(self) -> None:
         """
         Stop watching for database changes synchronously
@@ -219,6 +222,7 @@ class Notifier(BaseNotifier):
 
         self._stop_sync()
 
+    @wrap_unhandled_error(lambda self: self._logger)
     async def astop(self) -> None:
         """
         Stop watching for database changes asynchronously.
@@ -261,6 +265,7 @@ class Notifier(BaseNotifier):
         if self._logger:
             self._logger.info("SQLNotify Notifier stopped (sync mode)")
 
+    @wrap_unhandled_error(lambda self: self._logger, reraise=False)
     def cleanup(self) -> None:
         """
         Remove all triggers and functions from the database synchronously
@@ -277,6 +282,7 @@ class Notifier(BaseNotifier):
 
         self._cleanup_sync()
 
+    @wrap_unhandled_error(lambda self: self._logger, reraise=False)
     async def acleanup(self) -> None:
         """
         Remove all triggers and functions from the database asynchronously.
@@ -311,6 +317,7 @@ class Notifier(BaseNotifier):
         if self._logger:
             self._logger.info("SQLNotify Notifier cleaned up all triggers and functions (sync mode)")
 
+    @wrap_unhandled_error(lambda self: self._logger)
     def notify(
         self,
         model: type | str,
@@ -345,6 +352,7 @@ class Notifier(BaseNotifier):
 
         self._notify_sync(watcher, payload, use_overflow_table)
 
+    @wrap_unhandled_error(lambda self: self._logger)
     async def anotify(
         self,
         model: type | str,
@@ -580,7 +588,7 @@ class Notifier(BaseNotifier):
 
         Args:
             watcher (Watcher): The watcher that triggered
-            payload (dict): The notification payload
+            payload (dict[str, Any]): The notification payload
         """
 
         if len(watcher.primary_keys) == 1:

@@ -22,6 +22,10 @@ cd sqlnotify
 1. **Install dependencies**
 
 ```bash
+# Using make
+make install-dev
+
+# Use uv
 uv sync --all-groups --extra all
 ```
 
@@ -49,6 +53,16 @@ make test
 
 # Or directly with pytest
 uv run pytest
+```
+
+### Run tests with coverage
+
+```bash
+# Using make
+make test_cov
+
+# Or directly with pytest
+uv run pytest --cov=sqlnotify --cov-report=html
 ```
 
 ## Code Style
