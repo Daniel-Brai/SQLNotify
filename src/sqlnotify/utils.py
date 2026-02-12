@@ -1,21 +1,27 @@
+import inspect
+import logging
+from collections.abc import Callable
+from functools import wraps
+from typing import Any
+
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .constants import MAX_SQLNOTIFY_IDENTIFER_BYTES, MAX_SQLNOTIFY_PAYLOAD_BYTES
-from .exceptions import SQLNotifyIdentifierSizeError, SQLNotifyPayloadSizeError
+from .exceptions import SQLNotifyException, SQLNotifyIdentifierSizeError, SQLNotifyPayloadSizeError
 
 
 def extract_database_url(engine: AsyncEngine | Engine) -> str:
     """
     Extract the database URL from an engine for use with asyncpg LISTEN.
 
-    Converts SQLAlchemy URL format to plain PostgreSQL URL suitable for asyncpg.
+    Converts SQLAlchemy URL format to raw database DSN.
 
     Args:
         engine (Union[AsyncEngine, Engine]): SQLAlchemy Engine or AsyncEngine
 
     Returns:
-        str: PostgreSQL connection URL suitable for asyncpg
+        str: Database connection URL
     """
 
     url = engine.url.render_as_string(hide_password=False)
@@ -163,3 +169,65 @@ def validate_identifier_size(
         raise SQLNotifyIdentifierSizeError(combined)
 
     return True
+
+
+def wrap_unhandled_error(
+    logger_getter: Callable[..., logging.Logger] | None = None,
+    reraise=True,
+):
+    """
+    Decorator factory that wraps unhandled exceptions and converts them to SQLNotifyException
+    """
+
+    def _get_logger_from_call(*args, **kwargs):
+        if callable(logger_getter):
+            try:
+                return logger_getter(*args, **kwargs)
+            except Exception:
+                return None
+
+        return logger_getter
+
+    def decorator(func: Callable[..., Any]):
+
+        if inspect.iscoroutinefunction(func):
+
+            @wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                try:
+                    return await func(*args, **kwargs)
+                except SQLNotifyException:
+                    raise
+                except Exception as e:
+                    logger = _get_logger_from_call(*args, **kwargs)
+                    if logger:
+                        logger.exception(f"Unhandled exception in {func.__name__}")
+
+                    if reraise:
+                        raise SQLNotifyException(f"SQLNotify unhandled exception caught. Error: {str(e)}") from e
+                    else:
+                        return None
+
+            return async_wrapper
+
+        else:
+
+            @wraps(func)
+            def sync_wrapper(*args, **kwargs):
+                try:
+                    return func(*args, **kwargs)
+                except SQLNotifyException:
+                    raise
+                except Exception as e:
+                    logger = _get_logger_from_call(*args, **kwargs)
+                    if logger:
+                        logger.exception(f"Unhandled exception in {func.__name__}")
+
+                    if reraise:
+                        raise SQLNotifyException(f"SQLNotify unhandled exception caught. Error: {str(e)}") from e
+                    else:
+                        return None
+
+            return sync_wrapper
+
+    return decorator

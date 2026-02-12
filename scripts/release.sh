@@ -2,7 +2,8 @@
 
 set -e
 
-cd "$(dirname "$0")"
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$repo_root"
 
 FORCE=false
 
@@ -75,7 +76,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     new_version=$(uv version --short)
 
     # commit changes
-    git add .
+    git add pyproject.toml uv.lock
     git commit -m "bump version to $new_version"
     git tag -a "v$new_version" -m "v$new_version"
 

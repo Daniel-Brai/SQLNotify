@@ -323,7 +323,7 @@ await notifier.anotify(
 # notifier.notify(User, Operation.UPDATE, payload={"id": 123})
 ```
 
-**Note**: The `notify`/`anotify` methods validate payload size and can use overflow tables for large payloads. If `use_overflow_table=True`, payloads exceeding NOTIFY limit are automatically stored in the overflow table, and only an overflow ID is sent through the notification channel.
+**Note**: The `notify`/`anotify` methods validate payload size and can use overflow tables for large payloads. If `use_overflow_table=True`, payloads exceeding SQLNotify limit are automatically stored in the overflow table, and only an overflow ID is sent through the notification channel.
 
 ### Model Change Detection
 
@@ -548,7 +548,7 @@ notifier.start()  # Synchronous start
 2. **Trigger Creation** - The dialect creates database-specific triggers on your tables
 3. **Change Detection** - When data changes, triggers fire and call notification functions
 4. **NOTIFY** - Functions use database-native notification mechanisms (e.g., PostgreSQL's NOTIFY)
-5. **LISTEN** - SQLNotify maintains a dedicated connection listening for notifications
+5. **LISTEN** - SQLNotify maintains a dedicated connection listening for notifications or polls for changes (SQLite)
 6. **Event Distribution** - Incoming notifications are routed to subscribed callbacks
 7. **Callback Execution** - Your subscriber functions are called with change events
 
